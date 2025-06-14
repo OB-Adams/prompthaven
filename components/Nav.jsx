@@ -22,7 +22,7 @@ const Nav = () => {
         }
         return;
       }
-      try {
+      try { 
         const res = await getProviders();
         cachedProviders = res;
         isFetched = true;

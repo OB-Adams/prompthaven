@@ -2,28 +2,44 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { signIn, signOut, useSession, getProviders } from "next-auth/react";
 
+// Module-scoped cache
+let isFetched = false;
+let cachedProviders = null;
+
 const Nav = () => {
-  const IsUserLoggedIn = true;
-  const [Providers, setProviders] = useState(null);
+  const { data: session } = useSession();
+  const [providers, setProviders] = useState(null); // Lowercase 'providers' for consistency
   const [toggleDropdown, setToggleDropdown] = useState(false);
 
-//   useEffect(() => {
-//     const setProviders = async () => {
-//       const res = await getProviders();
-//       setProviders(res);
-//     };
-//     setProviders();
-//   }, []);
+  useEffect(() => {
+    const fetchProviders = async () => {
+      if (isFetched) {
+        if (providers !== cachedProviders) {
+          setProviders(cachedProviders); // Only update if different
+        }
+        return;
+      }
+      try {
+        const res = await getProviders();
+        cachedProviders = res;
+        isFetched = true;
+        setProviders(res);
+      } catch (error) {
+        console.error("Error fetching providers:", error);
+      }
+    };
+    fetchProviders();
+  }, []);
 
   return (
     <nav className="flex-between w-full mb-16 pt-3">
-      <Link href={"/"} className="flex gap-2 flex-center">
+      <Link href="/" className="flex gap-2 flex-center">
         <Image
-          src={"/assets/images/logo.svg"}
-          alt="Logo"
+          src="/assets/images/logo.svg"
+          alt="Promptopia Logo"
           width={30}
           height={30}
           className="object-contain"
@@ -33,74 +49,81 @@ const Nav = () => {
 
       {/* Desktop Navigation */}
       <div className="sm:flex hidden">
-        {IsUserLoggedIn ? (
+        {session?.user ? (
           <div className="flex gap-3 md:gap-5">
-            <Link href={"/create-prompt"} className="black_btn">
+            <Link href="/create-prompt" className="black_btn">
               Create Post
             </Link>
-            <button type="button" className="outline_btn" onClick={signOut}>
+            <button
+              type="button"
+              className="outline_btn"
+              onClick={() => signOut()}
+            >
               Sign Out
             </button>
-            <Link href={"/profile"}>
+            <Link href="/profile">
               <Image
-                src={"/assets/images/logo.svg"}
+                src={session.user.image || "/assets/images/logo.svg"}
                 alt="Profile"
                 width={37}
                 height={37}
                 className="rounded-full"
               />
             </Link>
-            <div />
           </div>
         ) : (
           <>
-            {Providers &&
-              Object.values(Providers).map((provider) => (
+            {providers ? (
+              Object.values(providers).map((provider) => (
                 <button
-                  key={provider.name}
+                  key={provider.id}
                   type="button"
                   className="black_btn"
                   onClick={() => signIn(provider.id)}
                 >
-                  Sign In
+                  Sign in with {provider.name}
                 </button>
-              ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">
+                Loading sign-in options...
+              </p>
+            )}
           </>
         )}
       </div>
 
       {/* Mobile Navigation */}
       <div className="sm:hidden flex relative">
-        {IsUserLoggedIn ? (
+        {session?.user ? (
           <div className="flex">
             <Image
-              src={"/assets/images/logo.svg"}
+              src={session.user.image || "/assets/images/logo.svg"}
               alt="Profile"
               width={37}
               height={37}
-              className="rounded-full"
+              className="rounded-full cursor-pointer"
               onClick={() => setToggleDropdown((prev) => !prev)}
             />
-
             {toggleDropdown && (
-              <div className="dropdown">
+              <div className="dropdown absolute top-12 right-0 bg-white shadow-lg rounded-md py-2 px-4 z-10">
                 <Link
-                  href={"/profile"}
-                  className="dropdown_link"
+                  href="/profile"
+                  className="dropdown_link block py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => setToggleDropdown(false)}
                 >
-                  My Profile
+                  {session.user.username || "My Profile"}
                 </Link>
                 <Link
-                  href={"/create-prompt"}
-                  className="dropdown_link"
+                  href="/create-prompt"
+                  className="dropdown_link block py-2 text-sm text-gray-700 hover:bg-gray-100"
                   onClick={() => setToggleDropdown(false)}
                 >
                   Create Prompt
                 </Link>
                 <button
                   type="button"
-                  className="mt-5 w-full black_btn"
+                  className="mt-2 w-full black_btn text-sm"
                   onClick={() => {
                     setToggleDropdown(false);
                     signOut();
@@ -113,17 +136,22 @@ const Nav = () => {
           </div>
         ) : (
           <>
-            {Providers &&
-              Object.values(Providers).map((provider) => (
+            {providers ? (
+              Object.values(providers).map((provider) => (
                 <button
-                  key={provider.name}
+                  key={provider.id}
                   type="button"
                   className="black_btn"
                   onClick={() => signIn(provider.id)}
                 >
-                  Sign In
+                  Sign in with {provider.name}
                 </button>
-              ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">
+                Loading sign-in options...
+              </p>
+            )}
           </>
         )}
       </div>

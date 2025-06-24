@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "PrompT Haven",
+  title: "Prompt Haven",
   description: "Created by OB",
 };
 

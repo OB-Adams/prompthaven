@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Form from "@/components/Form";
 
 const EditPrompt = () => {
@@ -48,7 +49,7 @@ const EditPrompt = () => {
       });
 
       if (response.ok) {
-        router.push("/");
+        router.push("/profile");
       }
     } catch (error) {
       console.error("Error creating prompt:", error);

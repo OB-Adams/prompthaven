@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Form from "@/components/Form";
 
-const EditPrompt = () => {
+export default function EditPrompt() {
+  return (
+    <Suspense fallback={<div>Loading prompt...</div>}>
+      <EditPromptContent />
+    </Suspense>
+  );
+}
+
+function EditPromptContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
@@ -18,13 +26,20 @@ const EditPrompt = () => {
 
   useEffect(() => {
     const getPromptDetails = async () => {
-      const response = await fetch(`/api/prompt/${promptId}`);
-      const data = await response.json();
+      if (!promptId) return;
 
-      setPost({
-        prompt: data.prompt,
-        tag: data.tag,
-      });
+      try {
+        const response = await fetch(`/api/prompt/${promptId}`);
+        if (!response.ok) throw new Error(`Failed to fetch prompt: ${response.status}`);
+        const data = await response.json();
+
+        setPost({
+          prompt: data.prompt,
+          tag: data.tag,
+        });
+      } catch (error) {
+        console.error("Error fetching prompt details:", error);
+      }
     };
 
     if (promptId) getPromptDetails();
@@ -33,7 +48,11 @@ const EditPrompt = () => {
   const updatePrompt = async (e) => {
     e.preventDefault();
 
-    if (!promptId) return alert("Prompt ID not found");
+    if (!promptId) {
+      alert("Prompt ID not found");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -48,11 +67,11 @@ const EditPrompt = () => {
         },
       });
 
-      if (response.ok) {
-        router.push("/profile");
-      }
+      if (!response.ok) throw new Error(`Failed to update prompt: ${response.status}`);
+      router.push("/profile");
     } catch (error) {
-      console.error("Error creating prompt:", error);
+      console.error("Error updating prompt:", error);
+      alert("Failed to update prompt");
     } finally {
       setSubmitting(false);
     }
@@ -67,6 +86,4 @@ const EditPrompt = () => {
       handleSubmit={updatePrompt}
     />
   );
-};
-
-export default EditPrompt;
+}

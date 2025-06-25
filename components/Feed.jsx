@@ -76,7 +76,7 @@ const Feed = () => {
               setSearchText('');
               setFilteredPosts(posts);
             }}
-            className='absolute right-4 text-gray-500 cursor-pointer'
+            className='text-xs absolute right-4 text-gray-500 cursor-pointer'
           >
             Clear
           </button>

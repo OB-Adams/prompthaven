@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import PromptCard from "./PromptCard";
+import { useState, useEffect } from 'react';
+import PromptCard from './PromptCard';
 
 const PromptCardList = ({ data, handleTagClick }) => {
   return (
-    <div className="mt-16 prompt_layout">
+    <div className='mt-16 prompt_layout'>
       {data.map((post) => (
         <PromptCard
           key={post._id}
@@ -18,34 +18,72 @@ const PromptCardList = ({ data, handleTagClick }) => {
 };
 
 const Feed = () => {
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState('');
   const [posts, setPosts] = useState([]);
-  const handleSeachChange = (e) => {};
+  const [filteredPosts, setFilteredPosts] = useState([]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchText(value);
+    filterPosts(value.toLowerCase());
+  };
+
+  const handleTagClick = (tag) => {
+    setSearchText(tag);
+    filterPosts(tag.toLowerCase());
+  };
+
+  const filterPosts = (searchValue) => {
+    const filtered = posts.filter(
+      (post) =>
+        post.prompt.toLowerCase().includes(searchValue) ||
+        post.tag.toLowerCase().includes(searchValue) ||
+        post.creator.username.toLowerCase().includes(searchValue)
+    );
+    setFilteredPosts(filtered);
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
-      const response = await fetch("/api/prompt");
-      const data = await response.json();
-      setPosts(data);
+      try {
+        const response = await fetch('/api/prompt');
+        const data = await response.json();
+        setPosts(data);
+        setFilteredPosts(data);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      }
     };
 
     fetchPosts();
   }, []);
 
   return (
-    <section className="feed">
-      <form action="" className="relative w-full flex-center">
+    <section className='feed'>
+      <form className='relative w-full flex-center'>
         <input
-          type="text"
-          placeholder="search for a tag or username"
+          type='text'
+          placeholder='Search for a tag, username, or prompt'
           value={searchText}
-          onChange={handleSeachChange}
+          onChange={handleSearchChange}
           required
-          className="search_input peer"
+          className='search_input peer'
         />
+        {searchText && (
+          <button
+            type='button'
+            onClick={() => {
+              setSearchText('');
+              setFilteredPosts(posts);
+            }}
+            className='absolute right-4 text-gray-500 cursor-pointer'
+          >
+            Clear
+          </button>
+        )}
       </form>
 
-      <PromptCardList data={posts} handleTagClick={() => {}} />
+      <PromptCardList data={filteredPosts} handleTagClick={handleTagClick} />
     </section>
   );
 };
